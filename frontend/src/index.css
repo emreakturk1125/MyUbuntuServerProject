@@ -142,6 +142,15 @@ body {
   background-color: #cbd5e1;
 }
 
+.btn-excel {
+  background-color: #16a34a;
+  color: #fff;
+}
+
+.btn-excel:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
 .btn-edit {
   background-color: #fef3c7;
   color: #92400e;

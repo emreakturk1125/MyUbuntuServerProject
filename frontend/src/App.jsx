@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
 import { personelService } from "./services/personelService";
 
 const initialFormState = {
@@ -126,6 +127,45 @@ function App() {
     } catch (err) {
       bildirimGoster(err.message || "Silme işlemi başarısız oldu.", "hata");
     }
+  };
+
+  const handleExcelIndir = () => {
+    if (!personeller || personeller.length === 0) {
+      bildirimGoster("İndirilecek personel kaydı bulunmuyor.", "hata");
+      return;
+    }
+
+    const satirlar = personeller.map((p) => ({
+      ID: p.id,
+      Ad: p.ad || "",
+      Soyad: p.soyad || "",
+      Departman: p.departman || "-",
+      Pozisyon: p.pozisyon || "-",
+      "E-Posta": p.email || "-",
+      Telefon: p.telefon || "-",
+      "İşe Giriş Tarihi": p.iseGirisTarihi
+        ? new Date(p.iseGirisTarihi).toLocaleDateString("tr-TR")
+        : "-",
+    }));
+
+    const calismaSayfasi = XLSX.utils.json_to_sheet(satirlar);
+    calismaSayfasi["!cols"] = [
+      { wch: 8 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 22 },
+      { wch: 20 },
+      { wch: 26 },
+      { wch: 18 },
+      { wch: 16 },
+    ];
+
+    const calismaKitabi = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(calismaKitabi, calismaSayfasi, "Personeller");
+
+    const bugun = new Date().toISOString().split("T")[0];
+    XLSX.writeFile(calismaKitabi, `Personel_Listesi_${bugun}.xlsx`);
+    bildirimGoster("Personel listesi Excel dosyası olarak indirildi.");
   };
 
   return (
@@ -277,15 +317,26 @@ function App() {
           <h2 style={{ fontSize: "1.1rem", fontWeight: 600 }}>
             📋 Personel Listesi
           </h2>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={personelleriGetir}
-            disabled={yukleniyor}
-            style={{ padding: "0.4rem 0.85rem", fontSize: "0.82rem" }}
-          >
-            {yukleniyor ? "Yükleniyor..." : "🔄 Yenile"}
-          </button>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button
+              type="button"
+              className="btn btn-excel"
+              onClick={handleExcelIndir}
+              disabled={yukleniyor || personeller.length === 0}
+              style={{ padding: "0.4rem 0.85rem", fontSize: "0.82rem" }}
+            >
+              ↓ Excel İndir
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={personelleriGetir}
+              disabled={yukleniyor}
+              style={{ padding: "0.4rem 0.85rem", fontSize: "0.82rem" }}
+            >
+              {yukleniyor ? "Yükleniyor..." : "🔄 Yenile"}
+            </button>
+          </div>
         </div>
 
         {yukleniyor ? (
