@@ -21,6 +21,8 @@ namespace PersonelApi.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Ad).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Soyad).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.CvFileName).IsRequired(false).HasMaxLength(255);
+                entity.Property(e => e.CvOriginalFileName).IsRequired(false).HasMaxLength(255);
             });
         }
     }

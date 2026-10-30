@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Amazon.Runtime;
+using Amazon.S3;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -11,8 +13,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using PersonelApi.Data;
+using PersonelApi.Models;
+using PersonelApi.Services;
 
 namespace PersonelApi
 {
@@ -30,6 +35,10 @@ namespace PersonelApi
         {
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
+
+            // MinIO Yapılandırması (Options Pattern + IConfiguration Environment Override Desteği)
+            services.Configure<MinioSettings>(Configuration.GetSection(MinioSettings.SectionName));
+            services.AddScoped<IStorageService, MinioStorageService>();
 
             services.AddCors(options =>
             {

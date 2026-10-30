@@ -4,13 +4,65 @@ services:
     container_name: personel-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: PersonelDb
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal-net
+
+  minio:
+    image: bitnamilegacy/minio:2025.7.23-debian-12-r5
+    container_name: personel-minio
+    restart: unless-stopped
+    command: server /bitnami/minio/data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/bitnami/minio/data
+    networks:
+      - internal-net
+      - proxy-net
+
+  api:
+    build:
+      context: ./backend/PersonelApi
+      dockerfile: Dockerfile
+    container_name: personel-api
+    restart: unless-stopped
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=personel-postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - Minio__Endpoint=http://personel-minio:9000
+      - Minio__AccessKey=${MINIO_ROOT_USER}
+      - Minio__SecretKey=${MINIO_ROOT_PASSWORD}
+      - Minio__BucketName=${MINIO_BUCKET_NAME}
+      - Minio__WithSSL=false
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000
+    depends_on:
+      - postgres
+      - minio
+    networks:
+      - internal-net
+      - proxy-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: personel-frontend
+    restart: unless-stopped
+    networks:
+      - proxy-net
 
 volumes:
   postgres_data:
+  minio_data:
+
+networks:
+  proxy-net:
+    external: true
+  internal-net:
+    driver: bridge
